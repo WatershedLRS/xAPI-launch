@@ -1,0 +1,46 @@
+<!--
+=============COPYRIGHT============
+Launch Example 
+Copyright (C) 2016  Watershed Systems Inc.
+
+License: Apache 2 https://www.apache.org/licenses/LICENSE-2.0
+
+Based on a prototype for Tin Can API
+Copyright (C) 2012  Andrew Downes
+-->
+<!doctype html>
+<meta http-equiv="X-UA-Compatible" content="IE=Edge">
+<html>
+    <head>
+        
+        <meta name="viewport" content="width=600, initial-scale=1">
+        <title>Launcher</title>
+        <link rel="stylesheet" href="bootstrap.min.css">
+        <script src="tincan-min.js"></script>
+        <script src="launch.js"></script>
+    </head>
+    <body >
+        <div class="container">
+        <h1>Launcher</h1>
+        <p>
+            Complete your full name and email address below to launch the activity.
+        </p>
+
+        <form onsubmit="return false">
+            <div class="form-group">
+            <label for="name">Full name:</label>
+            <input type="text" class="form-control" id="name" placeholder="Name">
+          </div>
+          <div class="form-group">
+            <label for="email">Email address:</label>
+            <input type="email" class="form-control" id="email" placeholder="Email">
+          </div>
+          <button type="submit" class="btn btn-default" id="launch" onclick="launchActivity()">Launch</button>
+        </form>
+        </div>
+
+        <noscript>
+            This tool requires JavaScript to be enabled in your browser. Please enable JavaScript, then refresh the page.
+        </noscript>
+    </body>
+</html>
