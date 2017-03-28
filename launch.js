@@ -12,67 +12,78 @@ Copyright (C) 2012  Andrew Downes
 var config = {
     endpoint: 'https://sandbox.watershedlrs.com/api/organizations/xxxx/lrs/',
     key: 'key',
-    secret: 'secret',
-    activity: {
-        id: 'http://example.co',
-        definition: {
-            name: {
-                en: 'Name'
-            },
-            description: {
-                en: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis quis nisl ante. Donec sit amet mauris imperdiet, condimentum nunc in, porttitor purus. Etiam ullamcorper justo eget magna interdum egestas. Proin quis sagittis mi. Sed lacinia sapien vel ex rutrum convallis. Nam non ullamcorper lorem.'
-            },
-            type: 'http://example.com'
-        }
-    },
-    launchLink: {
-        relative: true,
-        url: 'index.html'
-    }
+    secret: 'secret'
 };
+
+var launchUrl = '';
+var activity;
+
+getTinCanXML();
+
+// http://stackoverflow.com/a/7951947
+var parseXml;
+if (typeof window.DOMParser != "undefined") {
+    parseXml = function(xmlStr) {
+        return ( new window.DOMParser() ).parseFromString(xmlStr, "text/xml");
+    };
+} else if (typeof window.ActiveXObject != "undefined" &&
+       new window.ActiveXObject("Microsoft.XMLDOM")) {
+    parseXml = function(xmlStr) {
+        var xmlDoc = new window.ActiveXObject("Microsoft.XMLDOM");
+        xmlDoc.async = "false";
+        xmlDoc.loadXML(xmlStr);
+        return xmlDoc;
+    };
+} else {
+    throw new Error("No XML parser found");
+}
 
 function launchActivity()
 {
 
-    var launchLink = config.launchLink.url;
+    var launchLink = launchUrl;
     launchLink += '?endpoint=' + config.endpoint;
     launchLink += '&auth=Basic ' + TinCan.Utils.getBase64String(config.key + ':' + config.secret);
 
-    var actor = new TinCan.Agent ({'name': document.getElementById('name').value,'mbox': 'mailto:'+document.getElementById('email').value});
-console.log(actor);
-    launchLink += '&actor=' + JSON.stringify(actor.asVersion('1.0.0'));
+    launchLink += '&actor=' + JSON.stringify(getActor().asVersion('1.0.0'));
     launchLink += '&registration=' + TinCan.Utils.getUUID();
 
     sendStatement (launchLink);
+    window.open(launchLink);
 
     return false;
 }
 
 function sendStatement (launchLink){
-    if (config.launchLink.relative == true){
-        absoluteLaunchLink = 'http://example.com/' + launchLink;
-    }
-    else {
-        absoluteLaunchLink = launchLink;
-    }
-    var tincan = new TinCan({url: absoluteLaunchLink});
+    var lrs;
 
-    var lrs = tincan.recordStores[0];
+    try {
+        lrs = new TinCan.LRS(
+            {
+                endpoint: config.endpoint,
+                username: config.key,
+                password: config.secret,
+                allowFail: false
+            }
+        );
+    }
+    catch (ex) {
+        console.log('Failed to setup LRS object: ' + ex);
+    }
 
     var statement = new TinCan.Statement(
         {
             id: TinCan.Utils.getUUID(),
+            actor: getActor(),
             verb: {
                 id: 'http://adlnet.gov/expapi/verbs/launched',
                 display: {
                     en: 'launched'
                 }
             },
-            object: config.activity
+            object: activity
         }
     );
-
-    statement.actor = tincan.actor;
 
     console.log(statement);
     lrs.saveStatement(
@@ -81,15 +92,55 @@ function sendStatement (launchLink){
             callback: function (err, xhr) {
                 if (err !== null) {
                     if (xhr !== null) {
-                        console.log("Failed to save statement: " + xhr.responseText + " (" + xhr.status + ")");
+                        console.log('Failed to save statement: ' + xhr.responseText + ' (' + xhr.status + ')');
                     }
-                    console.log("Failed to save statement: " + err);
-                    alert('There was a problem communicating with the Learning Record Store. Your results may not be saved. Please check your internet connection and re-launch the game.');
+                    console.log('Failed to save statement: ' + err);
+                    alert('There was a problem communicating with the Learning Record Store. Your results may not be saved. Please check your internet connection and try again.');
                     return;
                 }
                 console.log("Statement saved");
-                window.open(launchLink);
             }
         }
     );
 }
+
+function readXML(filename, callback){
+    var xobj = new XMLHttpRequest();
+    xobj.overrideMimeType('application/xml');
+    xobj.open('GET', filename, true);
+    xobj.onreadystatechange = function() {
+        if (xobj.readyState == 4 && xobj.status == '200') {
+            callback(xobj.responseText);
+        }
+    }
+    xobj.send(null);
+}
+
+function getTinCanXML(){
+    return readXML('tincan.xml', function(data){
+        var xmlActivity = parseXml(data).getElementsByTagName('activity')[0];
+        var activityCfg = {
+            id: xmlActivity.id,
+            definition: {
+                name: {},
+                description: {}
+            }
+        }
+        for (var i = xmlActivity.getElementsByTagName('name').length - 1; i >= 0; i--) {
+            var name = xmlActivity.getElementsByTagName('name')[i];
+            activityCfg.definition.name[name.attributes.lang.nodeValue] = name.childNodes[0].nodeValue;
+        }
+        for (var i = xmlActivity.getElementsByTagName('description').length - 1; i >= 0; i--) {
+            var description = xmlActivity.getElementsByTagName('description')[i];
+            activityCfg.definition.description[description.attributes.lang.nodeValue] = description.childNodes[0].nodeValue;
+        }
+
+        activity = new TinCan.Activity(activityCfg);
+        launchUrl = xmlActivity.getElementsByTagName('launch')[0].childNodes[0].nodeValue;
+    });
+}
+
+function getActor(){
+    return new TinCan.Agent ({'name': document.getElementById('name').value,'mbox': 'mailto:'+document.getElementById('email').value});
+}
+
