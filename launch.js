@@ -42,19 +42,19 @@ function launchActivity()
 {
 
     var launchLink = launchUrl;
-    launchLink += '?endpoint=' + config.endpoint;
-    launchLink += '&auth=Basic ' + TinCan.Utils.getBase64String(config.key + ':' + config.secret);
+    launchLink += '?endpoint=' + encodeURIComponent(config.endpoint);
+    launchLink += '&auth=' + encodeURIComponent('Basic ' + TinCan.Utils.getBase64String(config.key + ':' + config.secret));
 
-    launchLink += '&actor=' + JSON.stringify(getActor().asVersion('1.0.0'));
-    launchLink += '&registration=' + TinCan.Utils.getUUID();
+    launchLink += '&actor=' + encodeURIComponent(JSON.stringify(getActor().asVersion('1.0.0')));
+    launchLink += '&registration=' + encodeURIComponent(TinCan.Utils.getUUID());
 
-    sendStatement (launchLink);
+    sendStatement();
     window.open(launchLink);
 
     return false;
 }
 
-function sendStatement (launchLink){
+function sendStatement (){
     var lrs;
 
     try {
