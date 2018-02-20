@@ -48,6 +48,8 @@ function launchActivity()
     launchLink += '&actor=' + encodeURIComponent(JSON.stringify(getActor().asVersion('1.0.0')));
     launchLink += '&registration=' + encodeURIComponent(TinCan.Utils.getUUID());
 
+    launchLink += '&activity_id=' + encodeURIComponent(activity.id);
+
     sendStatement();
     window.open(launchLink);
 
