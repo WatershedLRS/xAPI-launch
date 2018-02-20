@@ -129,12 +129,16 @@ function getTinCanXML(){
         for (var i = xmlActivity.getElementsByTagName('name').length - 1; i >= 0; i--) {
             var name = xmlActivity.getElementsByTagName('name')[i];
             var nameLang = name.attributes.hasOwnProperty('lang') ? name.attributes.lang.nodeValue : 'en';
-            activityCfg.definition.name[nameLang] = name.childNodes[0].nodeValue;
+            if (name.childNodes.length > 0){
+                activityCfg.definition.name[nameLang] = name.childNodes[0].nodeValue;
+            }
         }
         for (var i = xmlActivity.getElementsByTagName('description').length - 1; i >= 0; i--) {
             var description = xmlActivity.getElementsByTagName('description')[i];
             var descLang = description.attributes.hasOwnProperty('lang') ? description.attributes.lang.nodeValue : 'en';
-            activityCfg.definition.description[descLang] = description.childNodes[0].nodeValue;
+            if (description.childNodes.length > 0){
+                activityCfg.definition.description[descLang] = description.childNodes[0].nodeValue;
+            }
         }
 
         activity = new TinCan.Activity(activityCfg);
